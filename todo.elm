@@ -14,10 +14,10 @@ fullname: User -> String
 fullname user = user.firstName ++ " " ++ user.lastName
 
 type Msg = 
-    ShowForm
+    ShowForm | SaveNote
 
 type Mode = 
-    AddNode | ShowButton
+    ShowAddNoteForm | ShowButton
 
 type alias Todo = {
     id : Int
@@ -45,12 +45,16 @@ view model =
         , handleForm model.mode
     ]
 
-handleForm mode =
-    case mode of
-        ShowButton -> button [ onClick ShowForm ] [text "Add note" ]
-        AddNode -> input [] []
+handleForm model =
+    case model of
+        ShowButton -> button [ onClick ShowForm ] [text "New note" ]
+        ShowAddNoteForm -> form [] [
+            input [] []
+            , button [onClick SaveNote] [text "Add"]
+        ]
 
 update: Msg -> Model -> Model
 update msg model
     = case msg of
-        ShowForm -> {model | mode = AddNode}
+        ShowForm -> {model | mode = ShowAddNoteForm}
+        SaveNote -> {model | mode = ShowButton}
