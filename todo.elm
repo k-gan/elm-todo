@@ -1,4 +1,4 @@
-import Html exposing (..)
+import Html
 import Html.Events exposing (..)
 
 main = Html.beginnerProgram {model = model, view = view, update = update}
@@ -37,20 +37,20 @@ model = {
         , Todo 2 "write app again" ]
     , mode = ShowButton }
 
-view: Model -> Html Msg
+view: Model -> Html.Html Msg
 view model = 
     Html.div [] [
-        h1 [] [text (fullname model.user)]
-        , ul [] (List.map (\ todo -> Html.li [] [text todo.content]) model.todos)
+        Html.h1 [] [Html.text (fullname model.user)]
+        , Html.ul [] (List.map (\ todo -> Html.li [] [Html.text todo.content]) model.todos)
         , handleForm model.mode
     ]
 
 handleForm model =
     case model of
-        ShowButton -> button [ onClick ShowForm ] [text "New note" ]
-        ShowAddNoteForm -> form [] [
-            input [] []
-            , button [onClick SaveNote] [text "Add"]
+        ShowButton -> Html.button [ onClick ShowForm ] [Html.text "New note" ]
+        ShowAddNoteForm -> Html.form [] [
+            Html.input [] []
+            , Html.button [onClick SaveNote] [Html.text "Add"]
         ]
 
 update: Msg -> Model -> Model
