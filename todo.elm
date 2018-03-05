@@ -1,5 +1,8 @@
 import Html
+import Html.Attributes
 import Html.Events exposing (..)
+import Json.Encode
+import Json.Decode
 
 main = Html.beginnerProgram {model = model, view = view, update = update}
 
@@ -14,7 +17,7 @@ fullname: User -> String
 fullname user = user.firstName ++ " " ++ user.lastName
 
 type Msg = 
-    ShowForm | SaveNote | NoteChanged String
+    ShowForm  | SaveNote | NoteChanged String | SaveToFile | LoadFromFile 
 
 type Mode = 
     ShowAddNoteForm | ShowButton
@@ -29,6 +32,7 @@ type alias Model = {
     , todos : List Todo
     , mode : Mode
     , newNote : Maybe String
+    , encodedTodos : Maybe String
 }
 model: Model
 model = {
@@ -37,7 +41,8 @@ model = {
         Todo 1 "write app"
         , Todo 2 "write app again" ]
     , mode = ShowButton
-    , newNote = Nothing }
+    , newNote = Nothing
+    , encodedTodos = Nothing }
 
 view: Model -> Html.Html Msg
 view model = 
@@ -45,6 +50,16 @@ view model =
         Html.h1 [] [Html.text (fullname model.user)]
         , Html.ul [] (List.map (\ todo -> createTodoLi todo) model.todos)
         , handleForm model
+        , Html.br [] []
+        , Html.br [] []
+        , Html.button [ onClick SaveToFile ] [Html.text "Save to file"]
+        , Html.br [] []
+        , Html.br [] []
+        , Html.textarea 
+            [Html.Attributes.style [("width", "400px"), ("height", "150px")]] 
+            [ Maybe.withDefault "" model.encodedTodos |> Html.text]
+        , Html.br [] []
+        , Html.button [ onClick LoadFromFile ] [Html.text "Load notes"]
     ]
 
 update: Msg -> Model -> Model
@@ -53,6 +68,8 @@ update msg model
         ShowForm -> {model | mode = ShowAddNoteForm}
         SaveNote -> {model | mode = ShowButton, newNote = Nothing, todos = insertNewTodo model.newNote model.todos}
         NoteChanged note -> {model | newNote = Just note}
+        SaveToFile -> { model | encodedTodos = encodeTodos model.todos |> encodeTodosToString |> Just }
+        LoadFromFile -> {model | todos = Maybe.withDefault "" model.encodedTodos |> decodeTodosFromString } 
 
 handleForm: Model -> Html.Html Msg
 handleForm model =
@@ -87,3 +104,27 @@ getTodoIds todos =
 getTodoId: Todo -> Int
 getTodoId {id} =
     id
+
+encodeTodosToString: Json.Encode.Value -> String
+encodeTodosToString encodedTodos =
+    Json.Encode.object [("todos", encodedTodos)]
+    |> Json.Encode.encode 4
+
+encodeTodos: List Todo -> Json.Encode.Value
+encodeTodos todos =
+    List.map (\t -> encodeTodo t) todos
+    |> Json.Encode.list
+
+encodeTodo: Todo -> Json.Encode.Value
+encodeTodo todo = 
+    Json.Encode.object [
+        ("id", Json.Encode.int todo.id)
+        , ("content", Json.Encode.string todo.content)
+    ]
+
+decodeTodosFromString: String -> List Todo
+decodeTodosFromString todosString = 
+    Json.Decode.decodeString (Json.Decode.list todoDecoder) todosString
+    |> Result.withDefault []
+
+todoDecoder = Json.Decode.map2 Todo (Json.Decode.field "id" Json.Decode.int) (Json.Decode.field "content" Json.Decode.string)
