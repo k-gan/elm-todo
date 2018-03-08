@@ -17,10 +17,14 @@ fullname: User -> String
 fullname user = user.firstName ++ " " ++ user.lastName
 
 type Msg = 
-    ShowForm  | SaveNote | NoteChanged String | SaveToFile | LoadFromFile 
+    ShowForm  | SaveNote | NoteChanged String | SaveToFile | LoadFromFile | EncodedTodoListChanged String
 
 type Mode = 
     ShowAddNoteForm | ShowButton
+
+type alias TodosList = {
+    todos: List (Todo)
+}
 
 type alias Todo = {
     id : Int
@@ -56,7 +60,8 @@ view model =
         , Html.br [] []
         , Html.br [] []
         , Html.textarea 
-            [Html.Attributes.style [("width", "400px"), ("height", "150px")]] 
+            [Html.Attributes.style [("width", "400px"), ("height", "150px")],
+                onInput EncodedTodoListChanged ] 
             [ Maybe.withDefault "" model.encodedTodos |> Html.text]
         , Html.br [] []
         , Html.button [ onClick LoadFromFile ] [Html.text "Load notes"]
@@ -69,7 +74,8 @@ update msg model
         SaveNote -> {model | mode = ShowButton, newNote = Nothing, todos = insertNewTodo model.newNote model.todos}
         NoteChanged note -> {model | newNote = Just note}
         SaveToFile -> { model | encodedTodos = encodeTodos model.todos |> encodeTodosToString |> Just }
-        LoadFromFile -> {model | todos = Maybe.withDefault "" model.encodedTodos |> decodeTodosFromString } 
+        LoadFromFile -> {model | todos = Maybe.withDefault "" model.encodedTodos |> decodeTodosFromString }
+        EncodedTodoListChanged encodedTodoList -> { model | encodedTodos = Maybe.Just encodedTodoList }
 
 handleForm: Model -> Html.Html Msg
 handleForm model =
@@ -124,7 +130,18 @@ encodeTodo todo =
 
 decodeTodosFromString: String -> List Todo
 decodeTodosFromString todosString = 
-    Json.Decode.decodeString (Json.Decode.list todoDecoder) todosString
-    |> Result.withDefault []
+    -- logTodo2 (logTodo todosString)
+    (decodeTodoList todosString).todos
 
-todoDecoder = Json.Decode.map2 Todo (Json.Decode.field "id" Json.Decode.int) (Json.Decode.field "content" Json.Decode.string)
+userDecoder: Json.Decode.Decoder (List Todo)
+userDecoder =
+    Json.Decode.list todoDecoder
+
+todoDecoder : Json.Decode.Decoder Todo
+todoDecoder =
+    Json.Decode.map2 Todo (Json.Decode.field "id" Json.Decode.int) (Json.Decode.field "content" Json.Decode.string)
+
+decodeTodoList : String -> TodosList
+decodeTodoList todoString = 
+    -- TodoList Json.Decode.field "todos" userDecoder
+    TodosList (Result.withDefault ([Todo 0 ""]) (Json.Decode.decodeString (Json.Decode.field "todos" userDecoder) todoString ))
