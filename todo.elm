@@ -80,16 +80,3 @@ handleForm model =
 createTodoLi: Todo -> Html.Html Msg
 createTodoLi todo =
     Html.li [] [Html.text (toString todo.id ++ ". " ++ todo.content)]
-
-insertNewTodo: Maybe String -> List Todo -> List Todo
-insertNewTodo content todos =
-    case content of
-        Nothing -> todos
-        Just text ->
-            Todo (getHighestNumberOrZero (getTodoIds todos) + 1) text 
-            |> List.singleton 
-            |> List.append todos
-
-getHighestNumberOrZero: List Int -> Int
-getHighestNumberOrZero numbers =
-    List.maximum numbers |> Maybe.withDefault 0
