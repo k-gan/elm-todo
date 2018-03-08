@@ -95,14 +95,6 @@ getHighestNumberOrZero: List Int -> Int
 getHighestNumberOrZero numbers =
     List.maximum numbers |> Maybe.withDefault 0
 
-getTodoIds: List Todo -> List Int
-getTodoIds todos =
-    List.map getTodoId todos
-
-getTodoId: Todo -> Int
-getTodoId {id} =
-    id
-
 encodeTodosToString: Json.Encode.Value -> String
 encodeTodosToString encodedTodos =
     Json.Encode.object [("todos", encodedTodos)]
