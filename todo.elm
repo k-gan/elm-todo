@@ -3,6 +3,7 @@ import Html.Attributes
 import Html.Events exposing (..)
 import Json.Encode
 import Json.Decode
+import TodoList exposing (..)
 
 main = Html.beginnerProgram {model = model, view = view, update = update}
 
@@ -21,15 +22,6 @@ type Msg =
 
 type Mode = 
     ShowAddNoteForm | ShowButton
-
-type alias TodosList = {
-    todos: List (Todo)
-}
-
-type alias Todo = {
-    id : Int
-    , content : String
-}
 
 type alias Model = {
     user : User
