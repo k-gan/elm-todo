@@ -3,8 +3,22 @@ import Html.Attributes
 import Html.Events exposing (..)
 import TodoList exposing (..)
 import TodoListJson exposing (..)
+import Bootstrap.CDN as CDN
+import Bootstrap.Button as BootstrapButton
+import Bootstrap.Grid as Grid
 
-main = Html.beginnerProgram {model = model, view = view, update = update}
+
+-- main = Html.beginnerProgram {model = model, view = view, update = update}
+main =
+  Html.program
+    { init = init
+    , view = view
+    , update = update
+    , subscriptions = subscriptions
+    }
+    
+init: (Model, Cmd Msg)
+init = (model, Cmd.none)
 
 type alias User = {
     firstName : String
@@ -42,31 +56,46 @@ model = {
 view: Model -> Html.Html Msg
 view model = 
     Html.div [] [
-        Html.h1 [] [Html.text (fullname model.user)]
+        CDN.stylesheet
+        , Html.h1 [] [Html.text (fullname model.user)]
         , Html.ul [] (List.map (\ todo -> createTodoLi todo) model.todos)
         , handleForm model
         , Html.br [] []
         , Html.br [] []
-        , Html.button [ onClick SaveToFile ] [Html.text "Save to file"]
+        , BootstrapButton.button [ BootstrapButton.success, BootstrapButton.onClick SaveToFile ] [Html.text "Save to file"]
         , Html.br [] []
         , Html.br [] []
-        , Html.textarea 
-            [Html.Attributes.style [("width", "400px"), ("height", "150px")],
-                onInput EncodedTodoListChanged ] 
-            [ Maybe.withDefault "" model.encodedTodos |> Html.text]
-        , Html.br [] []
-        , Html.button [ onClick LoadFromFile ] [Html.text "Load notes"]
+        , Html.div [ Html.Attributes.style [("display", "block" )] ] [
+            Html.textarea 
+                [Html.Attributes.style [("width", "400px"), ("height", "150px")],
+                    onInput EncodedTodoListChanged ] 
+                [ Maybe.withDefault "" model.encodedTodos |> Html.text]
+            , Html.br [] []
+            , BootstrapButton.button [ BootstrapButton.primary, BootstrapButton.onClick LoadFromFile ] [Html.text "Load notes"]
+        ]
     ]
 
-update: Msg -> Model -> Model
+update: Msg -> Model -> (Model, Cmd Msg)
 update msg model
     = case msg of
-        ShowForm -> {model | mode = ShowAddNoteForm}
-        SaveNote -> {model | mode = ShowButton, newNote = Nothing, todos = insertNewTodo model.newNote model.todos}
-        NoteChanged note -> {model | newNote = Just note}
-        SaveToFile -> { model | encodedTodos = encodeTodos model.todos |> encodeTodosToString |> Just }
-        LoadFromFile -> {model | todos = Maybe.withDefault "" model.encodedTodos |> decodeTodosFromString }
-        EncodedTodoListChanged encodedTodoList -> { model | encodedTodos = Maybe.Just encodedTodoList }
+        ShowForm -> ({model | mode = ShowAddNoteForm}, Cmd.none)
+        SaveNote -> (
+            {model | mode = ShowButton, newNote = Nothing, todos = insertNewTodo model.newNote model.todos}
+            , Cmd.none)
+        NoteChanged note -> ({model | newNote = Just note}, Cmd.none)
+        SaveToFile -> (
+            { model | encodedTodos = encodeTodos model.todos |> encodeTodosToString |> Just }
+            , Cmd.none)
+        LoadFromFile -> (
+            {model | todos = Maybe.withDefault "" model.encodedTodos |> decodeTodosFromString }
+            , Cmd.none)
+        EncodedTodoListChanged encodedTodoList -> 
+            ({ model | encodedTodos = Maybe.Just encodedTodoList }, Cmd.none)
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.none
+
 
 handleForm: Model -> Html.Html Msg
 handleForm model =
@@ -74,7 +103,7 @@ handleForm model =
         ShowButton -> Html.button [ onClick ShowForm ] [Html.text "New note" ]
         ShowAddNoteForm -> Html.div [] [
             Html.input [ onInput NoteChanged ] [ ]
-            , Html.button [onClick SaveNote] [Html.text "Add"]
+            , BootstrapButton.button [ BootstrapButton.primary, BootstrapButton.onClick SaveNote] [Html.text "Add"]
         ]
 
 createTodoLi: Todo -> Html.Html Msg
