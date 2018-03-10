@@ -5,7 +5,6 @@ import TodoList exposing (..)
 import TodoListJson exposing (..)
 import Bootstrap.CDN as CDN
 import Bootstrap.Button as BootstrapButton
-import Bootstrap.Grid as Grid
 
 
 -- main = Html.beginnerProgram {model = model, view = view, update = update}
@@ -32,6 +31,7 @@ fullname user = user.firstName ++ " " ++ user.lastName
 
 type Msg = 
     ShowForm  | SaveNote | NoteChanged String | SaveToFile | LoadFromFile | EncodedTodoListChanged String
+        | CloseTask Int
 
 type Mode = 
     ShowAddNoteForm | ShowButton
@@ -91,11 +91,12 @@ update msg model
             , Cmd.none)
         EncodedTodoListChanged encodedTodoList -> 
             ({ model | encodedTodos = Maybe.Just encodedTodoList }, Cmd.none)
+        CloseTask id -> 
+            ({model | todos = (closeTaskInListWithId model.todos id)}, Cmd.none)
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.none
-
 
 handleForm: Model -> Html.Html Msg
 handleForm model =
@@ -109,8 +110,30 @@ handleForm model =
 createTodoLi: Todo -> Html.Html Msg
 createTodoLi todo =
     Html.li
-        [Html.Attributes.style [("text-decoration", case todo.status of 
+        [Html.Attributes.style [("text-decoration", getTextDecoration todo.status)]]
+        (appendDoneButton todo.status todo.id <| [Html.text (toString todo.id ++ ". " ++ todo.content)])
+
+appendDoneButton: TaskStatus -> Int -> List (Html.Html Msg) -> List (Html.Html Msg)
+appendDoneButton status id elements =
+    case status of
+        Pending -> elements ++ 
+            [(BootstrapButton.button 
+                [BootstrapButton.danger, BootstrapButton.small, BootstrapButton.onClick <| CloseTask id ]
+                [Html.text "done"])]
+        _ -> elements
+
+getTextDecoration: TaskStatus -> String
+getTextDecoration taskStatus =
+    case taskStatus of 
             Done -> "line-through" 
-            _ -> "none")
-        ]]
-        [Html.text (toString todo.id ++ ". " ++ todo.content)]
+            _ -> "none"
+
+closeTaskInListWithId: List (Todo) -> Int -> List (Todo)
+closeTaskInListWithId tasks id = 
+    List.map (closeTaskWithId id) tasks
+
+closeTaskWithId: Int -> Todo -> Todo
+closeTaskWithId id task =
+    if task.id == id then {task | status = Done }
+    else task
+
