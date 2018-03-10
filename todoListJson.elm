@@ -19,6 +19,11 @@ encodeTodo todo =
     Json.Encode.object [
         ("id", Json.Encode.int todo.id)
         , ("content", Json.Encode.string todo.content)
+        , ("status", Json.Encode.string
+            <| case todo.status of
+                Done -> "Done"
+                Pending -> "Pending"
+        )
     ]
 
 decodeTodosFromString: String -> List Todo
@@ -31,8 +36,20 @@ userDecoder =
 
 todoDecoder : Json.Decode.Decoder Todo
 todoDecoder =
-    Json.Decode.map2 Todo (Json.Decode.field "id" Json.Decode.int) (Json.Decode.field "content" Json.Decode.string)
+    Json.Decode.map3 Todo 
+        ( Json.Decode.field "id" Json.Decode.int)
+        ( Json.Decode.field "content" Json.Decode.string)
+        ( Json.Decode.field "status" taskStatusDecoder)
+
+taskStatusDecoder : Json.Decode.Decoder TaskStatus
+taskStatusDecoder =
+    Json.Decode.string
+        |> Json.Decode.andThen (\str ->
+            case str of
+                "Done" -> Json.Decode.succeed Done
+                _ -> Json.Decode.succeed Pending)
 
 decodeTodoList : String -> TodosList
 decodeTodoList todoString = 
-    TodosList (Result.withDefault ([Todo 0 ""]) (Json.Decode.decodeString (Json.Decode.field "todos" userDecoder) todoString ))
+    TodosList (Result.withDefault ([Todo 0 "" Pending]) 
+        <| Json.Decode.decodeString (Json.Decode.field "todos" userDecoder) todoString )

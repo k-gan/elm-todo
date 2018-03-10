@@ -47,8 +47,8 @@ model: Model
 model = {
     user = user
     , todos = [
-        Todo 1 "write app"
-        , Todo 2 "write app again" ]
+        Todo 1 "write app" Pending
+        , Todo 2 "write app again" Done ]
     , mode = ShowButton
     , newNote = Nothing
     , encodedTodos = Nothing }
@@ -108,4 +108,9 @@ handleForm model =
 
 createTodoLi: Todo -> Html.Html Msg
 createTodoLi todo =
-    Html.li [] [Html.text (toString todo.id ++ ". " ++ todo.content)]
+    Html.li
+        [Html.Attributes.style [("text-decoration", case todo.status of 
+            Done -> "line-through" 
+            _ -> "none")
+        ]]
+        [Html.text (toString todo.id ++ ". " ++ todo.content)]

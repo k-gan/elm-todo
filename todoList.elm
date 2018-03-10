@@ -1,5 +1,7 @@
 module TodoList exposing (..)
 
+import Date exposing (Date)
+
 type alias TodosList = {
     todos: List (Todo)
 }
@@ -7,7 +9,10 @@ type alias TodosList = {
 type alias Todo = {
     id : Int
     , content : String
+    , status : TaskStatus
 }
+
+type TaskStatus = Pending | Done
 
 getTodoIds: List Todo -> List Int
 getTodoIds todos =
@@ -22,7 +27,7 @@ insertNewTodo content todos =
     case content of
         Nothing -> todos
         Just text ->
-            Todo ((getHighestNumberOrZero (getTodoIds todos))  + 1) text 
+            Todo ((getHighestNumberOrZero (getTodoIds todos))  + 1) text Pending
             |> List.singleton 
             |> List.append todos
 
