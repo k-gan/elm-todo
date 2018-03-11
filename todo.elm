@@ -5,6 +5,7 @@ import TodoList exposing (..)
 import TodoListJson exposing (..)
 import Bootstrap.CDN as CDN
 import Bootstrap.Button as BootstrapButton
+import Bootstrap.ListGroup as BootList
 
 
 -- main = Html.beginnerProgram {model = model, view = view, update = update}
@@ -53,12 +54,24 @@ model = {
     , newNote = Nothing
     , encodedTodos = Nothing }
 
+sortTasksBasedOnStatus tasks =
+    List.map mapTaskStatusToInt tasks |> List.sortWith maxTuples |> List.map (\t -> Tuple.second t)
+
+maxTuples t1 t2 = 
+    compare (Tuple.first t1) (Tuple.first t2)
+
+mapTaskStatusToInt task =
+    case task.status of
+        Pending -> (1, task)
+        Done -> (2, task)
+
+
 view: Model -> Html.Html Msg
 view model = 
-    Html.div [] [
+    Html.div [Html.Attributes.style [("text-align", "center")]] [
         CDN.stylesheet
         , Html.h1 [] [Html.text (fullname model.user)]
-        , Html.ul [] (List.map (\ todo -> createTodoLi todo) model.todos)
+        , BootList.keyedUl (createKeyedTaskList (sortTasksBasedOnStatus model.todos) 1)
         , handleForm model
         , Html.br [] []
         , Html.br [] []
@@ -107,11 +120,21 @@ handleForm model =
             , BootstrapButton.button [ BootstrapButton.primary, BootstrapButton.onClick SaveNote] [Html.text "Add"]
         ]
 
-createTodoLi: Todo -> Html.Html Msg
-createTodoLi todo =
-    Html.li
-        [Html.Attributes.style [("text-decoration", getTextDecoration todo.status)]]
-        (appendDoneButton todo.status todo.id <| [Html.text (toString todo.id ++ ". " ++ todo.content)])
+createKeyedTaskList: List (Todo) -> Int -> List (String, BootList.Item Msg)
+createKeyedTaskList tasks startIdx =
+    case tasks of
+        [] -> []
+        (x::xs) -> (createKeyedLi startIdx x) :: (createKeyedTaskList xs (startIdx + 1))
+
+createKeyedLi: Int -> Todo -> (String, BootList.Item Msg)
+createKeyedLi id task =
+    (toString id, createTodoLi id task)
+
+createTodoLi: Int -> Todo -> BootList.Item Msg
+createTodoLi key todo =
+    BootList.li
+        [BootList.attrs [Html.Attributes.style [("text-decoration", getTextDecoration todo.status)]]]
+        (appendDoneButton todo.status todo.id <| [Html.text (toString key ++ ". " ++ todo.content)])
 
 appendDoneButton: TaskStatus -> Int -> List (Html.Html Msg) -> List (Html.Html Msg)
 appendDoneButton status id elements =
